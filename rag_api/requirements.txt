@@ -1,0 +1,11 @@
+pymilvus
+sentence-transformers
+python-dotenv
+PyPDF2
+langchain
+tiktoken
+transformers
+sentencepiece
+uvicorn
+fastapi
+google-genai
