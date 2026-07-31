@@ -6,6 +6,8 @@ langchain
 tiktoken
 transformers
 sentencepiece
+scikit-learn
+torch
 uvicorn
 fastapi
 google-genai

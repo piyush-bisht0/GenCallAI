@@ -1,8 +1,7 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Body
 from fastapi.middleware.cors import CORSMiddleware
 from database.agent_database import get_agent_by_id, get_all_agents, get_agent_schedule
 from database.client_database import get_client_by_id, get_calls_by_client, get_all_clients, add_client
-from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Body
 from pydub import AudioSegment
 import speech_recognition as sr
 import os
@@ -333,32 +332,50 @@ async def process_call(file: UploadFile = File(...)):
 
 
 class AssignAgentRequest(BaseModel):
-    client_name: str
-    contact_info: str
-    first_time_caller: bool
-    claim_id: int
-    urgency: str
-    intent: str
-    metadata: Dict[str, Any]
-    transcription: str
-    sentiment: str
+    # Fields sent by the React frontend
+    clientName: Optional[str] = None
+    contactInfo: Optional[str] = None
+    claimId: Optional[str] = None
+    analysis: Optional[Dict[str, Any]] = None
+    # Fields sent by direct API calls
+    client_name: Optional[str] = None
+    contact_info: Optional[str] = None
+    first_time_caller: bool = False
+    claim_id: Optional[int] = None
+    urgency: Optional[str] = "low"
+    intent: Optional[str] = "General Inquiry"
+    metadata: Optional[Dict[str, Any]] = {}
+    transcription: Optional[str] = ""
+    sentiment: Optional[str] = "Neutral"
 
 # 9. Assign agent to call
 @app.post("/assign_agent")
 async def assign_agent(request: AssignAgentRequest):
     """
     Assign an agent based on call analysis and schedule the call.
+    Accepts both camelCase fields (from React frontend) and snake_case fields (direct API).
     """
-    client_id = add_client(request.client_name, request.contact_info, request.first_time_caller)
+    # Resolve field names from either camelCase (frontend) or snake_case (direct API)
+    name = request.client_name or request.clientName or "Unknown"
+    contact = request.contact_info or request.contactInfo or ""
+    analysis = request.analysis or {}
+    urgency = request.urgency or analysis.get("urgency", "low")
+    intent = request.intent or analysis.get("intent", "General Inquiry")
+    sentiment = request.sentiment or analysis.get("sentiment", "Neutral")
+    metadata = request.metadata or analysis.get("metadata", {})
+    transcription = request.transcription or analysis.get("transcription", "")
+    claim_id = request.claim_id or (int(request.claimId) if request.claimId and request.claimId.isdigit() else 0)
+
+    client_id = add_client(name, contact, request.first_time_caller)
 
     matched_agent = assign_agent_and_schedule(
         client_id=client_id,
-        urgency=request.urgency,
-        intent=request.intent,
-        metadata=request.metadata,
-        transcription=request.transcription,
-        sentiment=request.sentiment,
-        claim_id=request.claim_id
+        urgency=urgency,
+        intent=intent,
+        metadata=metadata,
+        transcription=transcription,
+        sentiment=sentiment,
+        claim_id=claim_id
     )
 
     if not matched_agent:

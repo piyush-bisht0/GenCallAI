@@ -12,18 +12,17 @@ class MilvusDB:
         """
         Initialize a connection to Milvus Cloud.
         """
-        self.uri = os.getenv("MILVUS_PUBLIC_ENDPOINT")
-        self.api_key = os.getenv("MILVUS_API_KEY")
+        self.uri = os.getenv("MILVUS_PUBLIC_ENDPOINT", "./milvus_demo.db")
+        self.api_key = os.getenv("MILVUS_API_KEY", "")
         self.collection_name = "document_embeddings"
         self.dimension = 384  # Embedding dimension (default for MiniLM)
 
-        # Connect to Milvus Cloud
+        # Connect to Milvus Cloud or Local
         print(f"Connecting to Milvus at {self.uri}...")
-        connections.connect(
-            alias="default",
-            uri=self.uri,
-            token=self.api_key
-        )
+        if self.uri.endswith(".db"):
+            connections.connect(alias="default", uri=self.uri)
+        else:
+            connections.connect(alias="default", uri=self.uri, token=self.api_key)
 
     def create_collection(self):
         """

@@ -17,15 +17,14 @@ class HybridRetriever:
         self.collection_name = collection_name
         self.vectorizer = TfidfVectorizer()  # BM25 approximation
 
-        # Connect to Milvus
-        uri = os.getenv("MILVUS_PUBLIC_ENDPOINT")
-        api_key = os.getenv("MILVUS_API_KEY")
+        # Connect to Milvus Cloud or Local (Milvus Lite)
+        uri = os.getenv("MILVUS_PUBLIC_ENDPOINT", "./milvus_demo.db")
+        api_key = os.getenv("MILVUS_API_KEY", "")
         print(f"Connecting to Milvus at {uri}...")
-        connections.connect(
-            alias="default",
-            uri=uri,
-            token=api_key
-        )
+        if uri.endswith(".db"):
+            connections.connect(alias="default", uri=uri)
+        else:
+            connections.connect(alias="default", uri=uri, token=api_key)
 
         # Check connection and load collection
         self.collection = self._load_collection()

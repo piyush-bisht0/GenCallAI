@@ -1,7 +1,5 @@
-streamlit
 pydub
 speechrecognition
-datetime
 spacy
 regex
 textblob
@@ -9,7 +7,6 @@ numpy
 transformers
 librosa
 torchaudio
-streamlit-extras
 keybert
 fastapi
 uvicorn
